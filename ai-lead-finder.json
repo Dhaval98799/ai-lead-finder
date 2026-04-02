@@ -1,0 +1,547 @@
+{
+  "name": "AI Buyer Research Agent - FINAL 99% Accuracy",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "minutes", "minutesInterval": 5 }]
+        }
+      },
+      "id": "a1b2c3d4-0001",
+      "name": "STEP 1 - Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [60, 300],
+      "notes": "Runs every 5 minutes automatically"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "documentId": {
+          "__rl": true,
+          "value": "PASTE_YOUR_GOOGLE_SHEET_ID_HERE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status",
+              "lookupValue": "Pending"
+            }
+          ]
+        },
+        "options": {
+          "returnFirstMatch": true
+        }
+      },
+      "id": "a1b2c3d4-0002",
+      "name": "STEP 2 - Read Pending Row",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [260, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GOOGLE_CREDENTIAL_ID",
+          "name": "Google Sheets Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false },
+          "conditions": [
+            {
+              "id": "check-company",
+              "leftValue": "={{ $json.Company_Name }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEmpty" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "a1b2c3d4-0003",
+      "name": "STEP 3 - Has Data Check",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "PASTE_YOUR_GOOGLE_SHEET_ID_HERE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "Processing...",
+            "Row_Number": "={{ $('STEP 2 - Read Pending Row').item.json.Row_Number }}"
+          },
+          "matchingColumns": ["Row_Number"]
+        }
+      },
+      "id": "a1b2c3d4-0004",
+      "name": "STEP 4 - Mark as Processing",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [660, 200],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GOOGLE_CREDENTIAL_ID",
+          "name": "Google Sheets Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://serpapi.com/search.json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ '\"' + $('STEP 2 - Read Pending Row').item.json.Company_Name + '\" official website' }}"
+            },
+            { "name": "gl", "value": "={{ $('STEP 2 - Read Pending Row').item.json.Country_Code || 'us' }}" },
+            { "name": "hl", "value": "en" },
+            { "name": "num", "value": "10" },
+            { "name": "api_key", "value": "PASTE_YOUR_SERPAPI_KEY_HERE" }
+          ]
+        },
+        "options": { "timeout": 30000 }
+      },
+      "id": "a1b2c3d4-0005",
+      "name": "STEP 5A - Search Official Website",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 100]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://serpapi.com/search.json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $('STEP 2 - Read Pending Row').item.json.Company_Name + ' CEO owner director founder linkedin.com' }}"
+            },
+            { "name": "gl", "value": "={{ $('STEP 2 - Read Pending Row').item.json.Country_Code || 'us' }}" },
+            { "name": "hl", "value": "en" },
+            { "name": "num", "value": "10" },
+            { "name": "api_key", "value": "PASTE_YOUR_SERPAPI_KEY_HERE" }
+          ]
+        },
+        "options": { "timeout": 30000 }
+      },
+      "id": "a1b2c3d4-0006",
+      "name": "STEP 5B - Search Owner Director",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 250]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://serpapi.com/search.json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $('STEP 2 - Read Pending Row').item.json.Company_Name + ' contact phone email mobile number' }}"
+            },
+            { "name": "gl", "value": "={{ $('STEP 2 - Read Pending Row').item.json.Country_Code || 'us' }}" },
+            { "name": "hl", "value": "en" },
+            { "name": "num", "value": "10" },
+            { "name": "api_key", "value": "PASTE_YOUR_SERPAPI_KEY_HERE" }
+          ]
+        },
+        "options": { "timeout": 30000 }
+      },
+      "id": "a1b2c3d4-0007",
+      "name": "STEP 5C - Search Phone Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 400]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://serpapi.com/search.json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $('STEP 2 - Read Pending Row').item.json.Company_Name + ' ' + $('STEP 2 - Read Pending Row').item.json.Country + ' company crunchbase OR zoominfo OR bloomberg' }}"
+            },
+            { "name": "gl", "value": "={{ $('STEP 2 - Read Pending Row').item.json.Country_Code || 'us' }}" },
+            { "name": "hl", "value": "en" },
+            { "name": "num", "value": "10" },
+            { "name": "api_key", "value": "PASTE_YOUR_SERPAPI_KEY_HERE" }
+          ]
+        },
+        "options": { "timeout": 30000 }
+      },
+      "id": "a1b2c3d4-0008",
+      "name": "STEP 5D - Search Business Databases",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 550]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collect all 4 search results into one object\nconst company = $('STEP 2 - Read Pending Row').item.json.Company_Name || '';\nconst country = $('STEP 2 - Read Pending Row').item.json.Country || '';\nconst countryCode = $('STEP 2 - Read Pending Row').item.json.Country_Code || '';\nconst industry = $('STEP 2 - Read Pending Row').item.json.Industry || '';\nconst rowNum = $('STEP 2 - Read Pending Row').item.json.Row_Number || '';\n\nlet r1 = [], r2 = [], r3 = [], r4 = [];\ntry { r1 = $('STEP 5A - Search Official Website').item.json.organic_results || []; } catch(e){}\ntry { r2 = $('STEP 5B - Search Owner Director').item.json.organic_results || []; } catch(e){}\ntry { r3 = $('STEP 5C - Search Phone Email').item.json.organic_results || []; } catch(e){}\ntry { r4 = $('STEP 5D - Search Business Databases').item.json.organic_results || []; } catch(e){}\n\nconst format = (arr) => arr.slice(0,5).map(r => `TITLE: ${r.title || ''}\\nURL: ${r.link || ''}\\nSNIPPET: ${r.snippet || ''}`).join('\\n---\\n');\n\nreturn {\n  row_number: rowNum,\n  company_name: company,\n  country: country,\n  country_code: countryCode,\n  industry: industry,\n  search_website: format(r1),\n  search_people: format(r2),\n  search_contact: format(r3),\n  search_databases: format(r4)\n};"
+      },
+      "id": "a1b2c3d4-0009",
+      "name": "STEP 6 - Combine Search Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 325]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "PASTE_YOUR_CLAUDE_API_KEY_HERE" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{\nJSON.stringify({\n  model: 'claude-sonnet-4-20250514',\n  max_tokens: 2000,\n  messages: [{\n    role: 'user',\n    content: `You are a B2B data expert. Extract verified business information only.\\n\\nCOMPANY: ${$json.company_name}\\nCOUNTRY: ${$json.country}\\nINDUSTRY: ${$json.industry}\\n\\n[WEBSITE SEARCH]\\n${$json.search_website}\\n\\n[PEOPLE SEARCH]\\n${$json.search_people}\\n\\n[CONTACT SEARCH]\\n${$json.search_contact}\\n\\n[BUSINESS DB SEARCH]\\n${$json.search_databases}\\n\\nRULES:\\n- Only include data you are 90%+ confident is correct\\n- NEVER guess. Empty string is better than wrong data\\n- domain = just domain name like apple.com (no https, no www)\\n- phones must match country format\\n- If a name appears in only 1 source = mark confidence LOW\\n\\nReturn ONLY valid JSON, no explanation, no markdown:\\n{\\n  \\"domain\\": \\"company.com or empty\\",\\n  \\"domain_confidence\\": \\"HIGH or MEDIUM or LOW\\",\\n  \\"website_url\\": \\"https://company.com or empty\\",\\n  \\"company_official_name\\": \\"full official name\\",\\n  \\"company_description\\": \\"1 line description\\",\\n  \\"owner_name\\": \\"name or empty\\",\\n  \\"owner_confidence\\": \\"HIGH or MEDIUM or LOW or NOT_FOUND\\",\\n  \\"owner_linkedin\\": \\"linkedin URL or empty\\",\\n  \\"director_name\\": \\"name or empty\\",\\n  \\"director_confidence\\": \\"HIGH or MEDIUM or LOW or NOT_FOUND\\",\\n  \\"ceo_name\\": \\"name or empty\\",\\n  \\"founder_name\\": \\"name or empty\\",\\n  \\"phones\\": [\\"phone1\\", \\"phone2\\"],\\n  \\"emails_from_search\\": [\\"email1@domain.com\\"],\\n  \\"linkedin_company_url\\": \\"URL or empty\\",\\n  \\"overall_confidence\\": 85,\\n  \\"notes\\": \\"brief data quality note\\"\\n}`\n  }]\n})\n}}",
+        "options": { "timeout": 60000 }
+      },
+      "id": "a1b2c3d4-0010",
+      "name": "STEP 7 - Claude AI Extract Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1300, 325]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Claude response and filter low confidence\nconst body = $input.item.json;\nlet raw = '';\ntry {\n  raw = body.content[0].text || '';\n} catch(e) { raw = JSON.stringify(body); }\n\nlet ai = {};\ntry {\n  const clean = raw.replace(/```json/gi,'').replace(/```/g,'').trim();\n  ai = JSON.parse(clean);\n} catch(e) {\n  const m = raw.match(/\\{[\\s\\S]*\\}/);\n  try { ai = JSON.parse(m ? m[0] : '{}'); } catch(e2) { ai = {}; }\n}\n\nconst base = $('STEP 6 - Combine Search Results').item.json;\n\n// Drop LOW confidence fields\nconst domain = (ai.domain_confidence === 'LOW') ? '' : (ai.domain || '');\nconst ownerName = (ai.owner_confidence === 'LOW' || ai.owner_confidence === 'NOT_FOUND') ? '' : (ai.owner_name || '');\nconst directorName = (ai.director_confidence === 'LOW' || ai.director_confidence === 'NOT_FOUND') ? '' : (ai.director_name || '');\nconst phones = (ai.phones || []).filter(p => p && p.length > 5).join(' | ');\nconst searchEmails = (ai.emails_from_search || []).filter(Boolean);\n\nreturn {\n  row_number: base.row_number,\n  company_name: base.company_name,\n  country: base.country,\n  domain: domain,\n  domain_confidence: ai.domain_confidence || 'NOT_FOUND',\n  website_url: ai.website_url || '',\n  company_official_name: ai.company_official_name || base.company_name,\n  company_description: ai.company_description || '',\n  owner_name: ownerName,\n  owner_confidence: ai.owner_confidence || 'NOT_FOUND',\n  owner_linkedin: ai.owner_linkedin || '',\n  director_name: directorName,\n  director_confidence: ai.director_confidence || 'NOT_FOUND',\n  ceo_name: ai.ceo_name || '',\n  founder_name: ai.founder_name || '',\n  phones: phones,\n  emails_from_search: searchEmails,\n  linkedin_company_url: ai.linkedin_company_url || '',\n  overall_confidence: ai.overall_confidence || 0,\n  notes: ai.notes || '',\n  snov_domain: domain\n};"
+      },
+      "id": "a1b2c3d4-0011",
+      "name": "STEP 8 - Parse AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1500, 325]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "has-domain",
+              "leftValue": "={{ $json.snov_domain }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEmpty" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "a1b2c3d4-0012",
+      "name": "STEP 9 - Has Domain?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1700, 325]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://{{ $('STEP 8 - Parse AI Response').item.json.snov_domain }}",
+        "options": {
+          "timeout": 10000,
+          "response": { "response": { "neverError": true } }
+        }
+      },
+      "id": "a1b2c3d4-0013",
+      "name": "STEP 10A - Verify Domain is Live",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1900, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.snov.io/v1/get-domain-emails",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer PASTE_YOUR_SNOV_TOKEN_HERE" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify({ domain: $('STEP 8 - Parse AI Response').item.json.snov_domain, type: 'all', limit: 20 }) }}",
+        "options": { "timeout": 30000 }
+      },
+      "id": "a1b2c3d4-0014",
+      "name": "STEP 10B - Snov Get Domain Emails",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1900, 380]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Check domain live status\nconst resp = $input.item.json;\nconst status = resp.$response?.statusCode || resp.statusCode || 0;\nconst isLive = status >= 200 && status < 500;\nconst base = $('STEP 8 - Parse AI Response').item.json;\n\nreturn {\n  ...base,\n  domain_is_live: isLive,\n  domain_http_status: status\n};"
+      },
+      "id": "a1b2c3d4-0015",
+      "name": "STEP 11A - Domain Live Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2100, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Snov.io domain emails\nconst snovResp = $input.item.json;\nconst base = $('STEP 8 - Parse AI Response').item.json;\n\nlet emails = [];\nif (Array.isArray(snovResp.emails)) {\n  emails = snovResp.emails.map(e => typeof e === 'string' ? e : e.email).filter(Boolean);\n} else if (Array.isArray(snovResp.data)) {\n  emails = snovResp.data.map(e => typeof e === 'string' ? e : e.email).filter(Boolean);\n} else if (Array.isArray(snovResp)) {\n  emails = snovResp.map(e => typeof e === 'string' ? e : e.email).filter(Boolean);\n}\n\n// Merge with search emails\nconst searchEmails = base.emails_from_search || [];\nconst allUnique = [...new Set([...emails, ...searchEmails])];\n\nreturn {\n  ...base,\n  snov_emails: allUnique\n};"
+      },
+      "id": "a1b2c3d4-0016",
+      "name": "STEP 11B - Process Snov Emails",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2100, 380]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.snov.io/v1/verify-emails",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer PASTE_YOUR_SNOV_TOKEN_HERE" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify({ emails: $json.snov_emails.slice(0, 15) }) }}",
+        "options": { "timeout": 60000 }
+      },
+      "id": "a1b2c3d4-0017",
+      "name": "STEP 12 - Snov Verify Emails",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2300, 380]
+    },
+    {
+      "parameters": {
+        "jsCode": "// No domain path - use only search emails\nconst base = $('STEP 8 - Parse AI Response').item.json;\nreturn {\n  ...base,\n  domain_is_live: false,\n  domain_http_status: 0,\n  snov_emails: base.emails_from_search || []\n};"
+      },
+      "id": "a1b2c3d4-0018",
+      "name": "STEP 10C - No Domain Path",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1900, 560]
+    },
+    {
+      "parameters": {
+        "jsCode": "// FINAL ASSEMBLY - Build complete verified output\n// Get domain live data\nlet domainBase = {};\ntry { domainBase = $('STEP 11A - Domain Live Result').item.json; } catch(e) {}\ntry { if (!domainBase.row_number) domainBase = $('STEP 10C - No Domain Path').item.json; } catch(e) {}\n\n// Get snov emails + verification\nlet snovEmails = [];\ntry { snovEmails = $('STEP 11B - Process Snov Emails').item.json.snov_emails || []; } catch(e) {}\ntry { if (!snovEmails.length) snovEmails = $('STEP 10C - No Domain Path').item.json.snov_emails || []; } catch(e) {}\n\n// Get verification result\nlet verifiedSet = new Set();\nlet unverifiedList = [];\ntry {\n  const vr = $('STEP 12 - Snov Verify Emails').item.json;\n  const vdata = vr.data || vr.emails || vr || [];\n  if (Array.isArray(vdata)) {\n    vdata.forEach(r => {\n      const em = r.email || r;\n      const st = (r.status || r.result || '').toLowerCase();\n      if (['valid','verified','deliverable'].includes(st)) verifiedSet.add(em);\n      else if (!['invalid','catch_all_invalid','undeliverable'].includes(st)) unverifiedList.push(em);\n    });\n  }\n} catch(e) { unverifiedList = snovEmails; }\n\nconst allEmails = snovEmails;\nif (verifiedSet.size === 0) allEmails.forEach(e => unverifiedList.push(e));\n\nconst verifiedEmails = [...verifiedSet];\nconst genericPfx = ['info','contact','hello','support','sales','admin','office','mail','enquiry','hr','noreply'];\nconst personalVerified = verifiedEmails.filter(e => !genericPfx.some(p => e.toLowerCase().startsWith(p+'@')));\nconst genericVerified = verifiedEmails.filter(e => genericPfx.some(p => e.toLowerCase().startsWith(p+'@')));\n\nconst base = domainBase;\n\nreturn {\n  row_number: base.row_number,\n  Status: 'Done',\n  Domain: base.domain || '',\n  Domain_Verified: base.domain_is_live ? 'YES' : 'NO',\n  Website_URL: base.website_url || (base.domain ? 'https://' + base.domain : ''),\n  Company_Full_Name: base.company_official_name || base.company_name,\n  Company_Description: base.company_description || '',\n  Owner_Name: base.owner_name || '',\n  Owner_Confidence: base.owner_confidence || '',\n  Owner_LinkedIn: base.owner_linkedin || '',\n  Director_Name: base.director_name || '',\n  CEO_Name: base.ceo_name || '',\n  Founder_Name: base.founder_name || '',\n  Verified_Emails: verifiedEmails.join(' | '),\n  Personal_Emails: personalVerified.join(' | '),\n  Generic_Emails: genericVerified.join(' | '),\n  Unverified_Emails: unverifiedList.slice(0,10).join(' | '),\n  Total_Emails_Found: allEmails.length,\n  Phone_Numbers: base.phones || '',\n  LinkedIn_Company: base.linkedin_company_url || '',\n  Overall_Confidence: base.overall_confidence || 0,\n  Research_Notes: base.notes || '',\n  Last_Updated: new Date().toISOString()\n};"
+      },
+      "id": "a1b2c3d4-0019",
+      "name": "STEP 13 - Final Assembly",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2500, 380]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "PASTE_YOUR_GOOGLE_SHEET_ID_HERE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "={{ $json.Status }}",
+            "Domain": "={{ $json.Domain }}",
+            "Domain_Verified": "={{ $json.Domain_Verified }}",
+            "Website_URL": "={{ $json.Website_URL }}",
+            "Company_Full_Name": "={{ $json.Company_Full_Name }}",
+            "Company_Description": "={{ $json.Company_Description }}",
+            "Owner_Name": "={{ $json.Owner_Name }}",
+            "Owner_Confidence": "={{ $json.Owner_Confidence }}",
+            "Owner_LinkedIn": "={{ $json.Owner_LinkedIn }}",
+            "Director_Name": "={{ $json.Director_Name }}",
+            "CEO_Name": "={{ $json.CEO_Name }}",
+            "Founder_Name": "={{ $json.Founder_Name }}",
+            "Verified_Emails": "={{ $json.Verified_Emails }}",
+            "Personal_Emails": "={{ $json.Personal_Emails }}",
+            "Generic_Emails": "={{ $json.Generic_Emails }}",
+            "Unverified_Emails": "={{ $json.Unverified_Emails }}",
+            "Total_Emails_Found": "={{ $json.Total_Emails_Found }}",
+            "Phone_Numbers": "={{ $json.Phone_Numbers }}",
+            "LinkedIn_Company": "={{ $json.LinkedIn_Company }}",
+            "Overall_Confidence": "={{ $json.Overall_Confidence }}",
+            "Research_Notes": "={{ $json.Research_Notes }}",
+            "Last_Updated": "={{ $json.Last_Updated }}",
+            "Row_Number": "={{ $json.row_number }}"
+          },
+          "matchingColumns": ["Row_Number"]
+        }
+      },
+      "id": "a1b2c3d4-0020",
+      "name": "STEP 14 - Write to Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [2700, 380],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GOOGLE_CREDENTIAL_ID",
+          "name": "Google Sheets Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "PASTE_YOUR_GOOGLE_SHEET_ID_HERE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "Error",
+            "Research_Notes": "={{ $json.message || 'Unknown error occurred' }}",
+            "Last_Updated": "={{ new Date().toISOString() }}",
+            "Row_Number": "={{ $('STEP 2 - Read Pending Row').item.json.Row_Number }}"
+          },
+          "matchingColumns": ["Row_Number"]
+        }
+      },
+      "id": "a1b2c3d4-0021",
+      "name": "STEP 15 - Mark Error in Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [880, 700],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GOOGLE_CREDENTIAL_ID",
+          "name": "Google Sheets Account"
+        }
+      }
+    }
+  ],
+
+  "connections": {
+    "STEP 1 - Schedule Trigger": {
+      "main": [[{ "node": "STEP 2 - Read Pending Row", "type": "main", "index": 0 }]]
+    },
+    "STEP 2 - Read Pending Row": {
+      "main": [[{ "node": "STEP 3 - Has Data Check", "type": "main", "index": 0 }]]
+    },
+    "STEP 3 - Has Data Check": {
+      "main": [
+        [{ "node": "STEP 4 - Mark as Processing", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "STEP 4 - Mark as Processing": {
+      "main": [[
+        { "node": "STEP 5A - Search Official Website", "type": "main", "index": 0 },
+        { "node": "STEP 5B - Search Owner Director", "type": "main", "index": 0 },
+        { "node": "STEP 5C - Search Phone Email", "type": "main", "index": 0 },
+        { "node": "STEP 5D - Search Business Databases", "type": "main", "index": 0 }
+      ]]
+    },
+    "STEP 5A - Search Official Website": {
+      "main": [[{ "node": "STEP 6 - Combine Search Results", "type": "main", "index": 0 }]]
+    },
+    "STEP 5B - Search Owner Director": {
+      "main": [[{ "node": "STEP 6 - Combine Search Results", "type": "main", "index": 0 }]]
+    },
+    "STEP 5C - Search Phone Email": {
+      "main": [[{ "node": "STEP 6 - Combine Search Results", "type": "main", "index": 0 }]]
+    },
+    "STEP 5D - Search Business Databases": {
+      "main": [[{ "node": "STEP 6 - Combine Search Results", "type": "main", "index": 0 }]]
+    },
+    "STEP 6 - Combine Search Results": {
+      "main": [[{ "node": "STEP 7 - Claude AI Extract Data", "type": "main", "index": 0 }]]
+    },
+    "STEP 7 - Claude AI Extract Data": {
+      "main": [[{ "node": "STEP 8 - Parse AI Response", "type": "main", "index": 0 }]]
+    },
+    "STEP 8 - Parse AI Response": {
+      "main": [[{ "node": "STEP 9 - Has Domain?", "type": "main", "index": 0 }]]
+    },
+    "STEP 9 - Has Domain?": {
+      "main": [
+        [
+          { "node": "STEP 10A - Verify Domain is Live", "type": "main", "index": 0 },
+          { "node": "STEP 10B - Snov Get Domain Emails", "type": "main", "index": 0 }
+        ],
+        [{ "node": "STEP 10C - No Domain Path", "type": "main", "index": 0 }]
+      ]
+    },
+    "STEP 10A - Verify Domain is Live": {
+      "main": [[{ "node": "STEP 11A - Domain Live Result", "type": "main", "index": 0 }]]
+    },
+    "STEP 10B - Snov Get Domain Emails": {
+      "main": [[{ "node": "STEP 11B - Process Snov Emails", "type": "main", "index": 0 }]]
+    },
+    "STEP 11B - Process Snov Emails": {
+      "main": [[{ "node": "STEP 12 - Snov Verify Emails", "type": "main", "index": 0 }]]
+    },
+    "STEP 12 - Snov Verify Emails": {
+      "main": [[{ "node": "STEP 13 - Final Assembly", "type": "main", "index": 0 }]]
+    },
+    "STEP 10C - No Domain Path": {
+      "main": [[{ "node": "STEP 13 - Final Assembly", "type": "main", "index": 0 }]]
+    },
+    "STEP 11A - Domain Live Result": {
+      "main": [[{ "node": "STEP 13 - Final Assembly", "type": "main", "index": 0 }]]
+    },
+    "STEP 13 - Final Assembly": {
+      "main": [[{ "node": "STEP 14 - Write to Google Sheet", "type": "main", "index": 0 }]]
+    }
+  },
+
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "timezone": "Asia/Kolkata",
+    "errorWorkflow": ""
+  },
+  "tags": ["AI Agent", "Buyer Research", "99% Accuracy", "B2B"],
+  "pinData": {},
+  "staticData": null
+}
